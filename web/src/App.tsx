@@ -46,6 +46,7 @@ type CardDef = {
 }
 
 type PileType = 'draw' | 'discard' | 'exhaust'
+type BuffItem = { label: string; value: number }
 
 const STARTING_DECK: CardId[] = [
   'strike',
@@ -178,6 +179,22 @@ function HpBlockBar({ hp, maxHp, block }: { hp: number; maxHp: number; block: nu
       <div className="bar block-bar">
         <div className="fill" style={{ width: `${Math.min((block / 30) * 100, 100)}%` }} />
         <span>{block} 护甲</span>
+      </div>
+    </div>
+  )
+}
+
+function BuffSlots({ title, buffs, rightAlign = false }: { title: string; buffs: BuffItem[]; rightAlign?: boolean }) {
+  return (
+    <div className={`buff-slots ${rightAlign ? 'right' : ''}`}>
+      <p className="buff-title">{title}</p>
+      <div className="buff-list">
+        {buffs.map((buff) => (
+          <div key={buff.label} className={`buff-chip ${buff.value > 0 ? 'active' : 'inactive'}`}>
+            <span>{buff.label}</span>
+            <strong>{buff.value}</strong>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -416,6 +433,13 @@ function App() {
         <article className="fighter-card left">
           <FighterIronclad />
           <h2>红裤衩</h2>
+          <BuffSlots
+            title="Buff 槽"
+            buffs={[
+              { label: '力量', value: 0 },
+              { label: '易伤', value: state.player.vulnerable },
+            ]}
+          />
           <HpBlockBar hp={state.player.hp} maxHp={state.player.maxHp} block={state.player.block} />
         </article>
 
@@ -423,7 +447,14 @@ function App() {
           <FighterCultist />
           <h2>{state.enemy.name}</h2>
           <p className="intent">意图: {state.enemy.intent.label}</p>
-          <p className="small">力量 {state.enemy.strength} / 易伤 {state.enemy.vulnerable}</p>
+          <BuffSlots
+            title="Buff 槽"
+            rightAlign
+            buffs={[
+              { label: '力量', value: state.enemy.strength },
+              { label: '易伤', value: state.enemy.vulnerable },
+            ]}
+          />
           <HpBlockBar hp={state.enemy.hp} maxHp={state.enemy.maxHp} block={state.enemy.block} />
         </article>
       </section>

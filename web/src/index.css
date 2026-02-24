@@ -99,10 +99,55 @@ button {
   font-weight: 700;
 }
 
-.small {
-  margin: 2px 0 8px;
-  color: #d7d7d7;
+.buff-slots {
+  margin: 4px 0 10px;
+}
+
+.buff-slots.right .buff-title {
+  text-align: right;
+}
+
+.buff-title {
+  margin: 0 0 6px;
+  color: #b7c8d7;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.buff-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.buff-slots.right .buff-list {
+  justify-content: flex-end;
+}
+
+.buff-chip {
+  min-width: 76px;
+  border: 1px solid #5d7183;
+  border-radius: 999px;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.buff-chip strong {
   font-size: 0.9rem;
+}
+
+.buff-chip.active {
+  background: linear-gradient(180deg, rgb(68 108 138 / 42%), rgb(37 64 84 / 38%));
+  border-color: #8eb1cb;
+}
+
+.buff-chip.inactive {
+  opacity: 0.68;
+  background: rgb(24 32 41 / 60%);
 }
 
 .bars {
