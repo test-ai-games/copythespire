@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 
 type CardId = 'strike' | 'defend' | 'bash'
 
@@ -18,12 +18,13 @@ type Player = Actor & {
 }
 
 type EnemyIntent =
-  | { id: 'chant'; label: string; strength: number }
+  | { id: 'chant'; label: string; ritualGain: number }
   | { id: 'ritual_attack'; label: string; attack: number }
 
 type Enemy = Actor & {
   name: string
   strength: number
+  ritual: number
   intentIndex: number
   intent: EnemyIntent
 }
@@ -31,6 +32,7 @@ type Enemy = Actor & {
 type BattlePhase = 'player' | 'won' | 'lost'
 
 type BattleState = {
+  encounter: number
   turn: number
   phase: BattlePhase
   player: Player
@@ -46,7 +48,9 @@ type CardDef = {
 }
 
 type PileType = 'draw' | 'discard' | 'exhaust'
-type BuffItem = { label: string; value: number }
+type BuffItem = { label: string; value: number; description: string }
+
+const BURNING_BLOOD_HEAL = 6
 
 const STARTING_DECK: CardId[] = [
   'strike',
@@ -68,7 +72,7 @@ const CARDS: Record<CardId, CardDef> = {
 }
 
 const INTENT_ROTATION: EnemyIntent[] = [
-  { id: 'chant', label: '吟唱 (+3 力量)', strength: 3 },
+  { id: 'chant', label: '吟唱 (+1 仪式)', ritualGain: 1 },
   { id: 'ritual_attack', label: '祭祀斩击 (6)', attack: 6 },
   { id: 'ritual_attack', label: '祭祀斩击 (6)', attack: 6 },
 ]
@@ -137,10 +141,10 @@ function dealDamage(target: Actor, rawDamage: number): { target: Actor; hpLoss: 
   }
 }
 
-function createInitialState(): BattleState {
+function createBattleState(playerHp = 80, maxHp = 80, encounter = 1): BattleState {
   const playerBase: Player = {
-    hp: 80,
-    maxHp: 80,
+    hp: playerHp,
+    maxHp,
     block: 0,
     vulnerable: 0,
     energy: 3,
@@ -151,6 +155,7 @@ function createInitialState(): BattleState {
   }
 
   return {
+    encounter,
     turn: 1,
     phase: 'player',
     player: drawCards(playerBase, 5),
@@ -161,10 +166,11 @@ function createInitialState(): BattleState {
       block: 0,
       vulnerable: 0,
       strength: 0,
+      ritual: 3,
       intentIndex: 0,
       intent: INTENT_ROTATION[0],
     },
-    log: ['战斗开始：红裤衩 vs 邪教徒'],
+    log: [`第 ${encounter} 场战斗开始：红裤衩 vs 邪教徒`],
   }
 }
 
@@ -174,7 +180,9 @@ function HpBlockBar({ hp, maxHp, block }: { hp: number; maxHp: number; block: nu
     <div className="bars">
       <div className="bar hp-bar">
         <div className="fill" style={{ width: `${hpPercent}%` }} />
-        <span>{hp}/{maxHp} HP</span>
+        <span>
+          {hp}/{maxHp} HP
+        </span>
       </div>
       <div className="bar block-bar">
         <div className="fill" style={{ width: `${Math.min((block / 30) * 100, 100)}%` }} />
@@ -184,16 +192,29 @@ function HpBlockBar({ hp, maxHp, block }: { hp: number; maxHp: number; block: nu
   )
 }
 
+function InfoTooltip({ children, content }: { children: ReactNode; content: string }) {
+  return (
+    <span className="tooltip-anchor">
+      {children}
+      <span className="tooltip-bubble" role="tooltip">
+        {content}
+      </span>
+    </span>
+  )
+}
+
 function BuffSlots({ title, buffs, rightAlign = false }: { title: string; buffs: BuffItem[]; rightAlign?: boolean }) {
   return (
     <div className={`buff-slots ${rightAlign ? 'right' : ''}`}>
       <p className="buff-title">{title}</p>
       <div className="buff-list">
         {buffs.map((buff) => (
-          <div key={buff.label} className={`buff-chip ${buff.value > 0 ? 'active' : 'inactive'}`}>
-            <span>{buff.label}</span>
-            <strong>{buff.value}</strong>
-          </div>
+          <InfoTooltip key={buff.label} content={buff.description}>
+            <div className={`buff-chip ${buff.value > 0 ? 'active' : 'inactive'}`}>
+              <span>{buff.label}</span>
+              <strong>{buff.value}</strong>
+            </div>
+          </InfoTooltip>
         ))}
       </div>
     </div>
@@ -202,21 +223,29 @@ function BuffSlots({ title, buffs, rightAlign = false }: { title: string; buffs:
 
 function RelicBurningBlood() {
   return (
-    <div className="relic" title="燃烧之血">
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <defs>
-          <linearGradient id="fire" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffe07a" />
-            <stop offset="55%" stopColor="#ff7a30" />
-            <stop offset="100%" stopColor="#b32514" />
-          </linearGradient>
-        </defs>
-        <circle cx="32" cy="32" r="28" fill="#3a1d12" stroke="#f4b56f" strokeWidth="3" />
-        <path d="M34 13c3 9-4 12-4 18 0 4 3 7 7 7 5 0 9-4 9-10 0-8-5-12-12-15z" fill="url(#fire)" />
-        <path d="M24 26c0 0-8 5-8 14 0 7 6 12 14 12s14-5 14-12c0-6-4-11-9-13 1 7-2 11-7 11-4 0-7-3-7-7 0-2 1-4 3-5z" fill="url(#fire)" />
-      </svg>
-      <span>燃烧之血</span>
-    </div>
+    <InfoTooltip content={`战斗胜利后，立刻回复 ${BURNING_BLOOD_HEAL} 点生命。`}>
+      <div className="relic">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="fire" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ffe07a" />
+              <stop offset="55%" stopColor="#ff7a30" />
+              <stop offset="100%" stopColor="#b32514" />
+            </linearGradient>
+          </defs>
+          <circle cx="32" cy="32" r="28" fill="#3a1d12" stroke="#f4b56f" strokeWidth="3" />
+          <path
+            d="M34 13c3 9-4 12-4 18 0 4 3 7 7 7 5 0 9-4 9-10 0-8-5-12-12-15z"
+            fill="url(#fire)"
+          />
+          <path
+            d="M24 26c0 0-8 5-8 14 0 7 6 12 14 12s14-5 14-12c0-6-4-11-9-13 1 7-2 11-7 11-4 0-7-3-7-7 0-2 1-4 3-5z"
+            fill="url(#fire)"
+          />
+        </svg>
+        <span>燃烧之血</span>
+      </div>
+    </InfoTooltip>
   )
 }
 
@@ -250,18 +279,18 @@ function FighterCultist() {
 }
 
 function App() {
-  const [state, setState] = useState<BattleState>(() => createInitialState())
+  const [state, setState] = useState<BattleState>(() => createBattleState())
   const [openedPile, setOpenedPile] = useState<PileType | null>(null)
 
   const statusText = useMemo(() => {
     if (state.phase === 'won') {
-      return '胜利'
+      return `胜利 · 第 ${state.encounter} 场`
     }
     if (state.phase === 'lost') {
-      return '失败'
+      return `失败 · 第 ${state.encounter} 场`
     }
-    return `第 ${state.turn} 回合`
-  }, [state.phase, state.turn])
+    return `第 ${state.encounter} 场 · 回合 ${state.turn}`
+  }, [state.encounter, state.phase, state.turn])
 
   const playCard = (handIndex: number) => {
     setState((prev) => {
@@ -315,6 +344,13 @@ function App() {
       }
 
       if (enemy.hp <= 0) {
+        const healed = Math.min(BURNING_BLOOD_HEAL, player.maxHp - player.hp)
+        if (healed > 0) {
+          player = { ...player, hp: player.hp + healed }
+          log.push(`燃烧之血触发，回复 ${healed} 点生命。`)
+        } else {
+          log.push('燃烧之血触发，但生命已满。')
+        }
         log.push('邪教徒被击败。')
         return { ...prev, player, enemy, log, phase: 'won' }
       }
@@ -343,15 +379,20 @@ function App() {
         block: 0,
       }
 
+      if (enemy.ritual > 0) {
+        enemy = { ...enemy, strength: enemy.strength + enemy.ritual }
+        log.push(`邪教徒的仪式触发，力量 +${enemy.ritual}。`)
+      }
+
       const intent = enemy.intent
       log.push(`邪教徒意图：${intent.label}`)
 
       if (intent.id === 'chant') {
         enemy = {
           ...enemy,
-          strength: enemy.strength + intent.strength,
+          ritual: enemy.ritual + intent.ritualGain,
         }
-        log.push(`邪教徒吟唱，获得 ${intent.strength} 点力量。`)
+        log.push(`邪教徒吟唱，仪式 +${intent.ritualGain}。`)
       }
 
       if (intent.id === 'ritual_attack') {
@@ -409,6 +450,8 @@ function App() {
     return [...state.player.exhaustPile].reverse()
   }, [openedPile, state.player.discardPile, state.player.drawPile, state.player.exhaustPile])
 
+  const actionLabel = state.phase === 'won' ? '继续战斗' : '重新开始'
+
   return (
     <main className="battle-page">
       <header className="topbar">
@@ -420,11 +463,16 @@ function App() {
           <button
             className="secondary"
             onClick={() => {
-              setState(createInitialState())
               setOpenedPile(null)
+              setState((prev) => {
+                if (prev.phase === 'won') {
+                  return createBattleState(prev.player.hp, prev.player.maxHp, prev.encounter + 1)
+                }
+                return createBattleState()
+              })
             }}
           >
-            重新开始
+            {actionLabel}
           </button>
         </div>
       </header>
@@ -436,8 +484,8 @@ function App() {
           <BuffSlots
             title="Buff 槽"
             buffs={[
-              { label: '力量', value: 0 },
-              { label: '易伤', value: state.player.vulnerable },
+              { label: '力量', value: 0, description: '每层力量让攻击额外造成 1 点伤害。' },
+              { label: '易伤', value: state.player.vulnerable, description: '受到的攻击伤害提高 50%。' },
             ]}
           />
           <HpBlockBar hp={state.player.hp} maxHp={state.player.maxHp} block={state.player.block} />
@@ -451,8 +499,9 @@ function App() {
             title="Buff 槽"
             rightAlign
             buffs={[
-              { label: '力量', value: state.enemy.strength },
-              { label: '易伤', value: state.enemy.vulnerable },
+              { label: '力量', value: state.enemy.strength, description: '每层力量让攻击额外造成 1 点伤害。' },
+              { label: '仪式', value: state.enemy.ritual, description: '每回合开始时，获得等同于该数值的力量。' },
+              { label: '易伤', value: state.enemy.vulnerable, description: '受到的攻击伤害提高 50%。' },
             ]}
           />
           <HpBlockBar hp={state.enemy.hp} maxHp={state.enemy.maxHp} block={state.enemy.block} />
