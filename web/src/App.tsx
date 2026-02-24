@@ -522,24 +522,26 @@ function App() {
       </section>
 
       {openedPile && (
-        <section className="pile-preview">
-          <div className="pile-preview-header">
-            <h3>{PILE_LABEL[openedPile]}内容</h3>
-            <button className="secondary" onClick={() => setOpenedPile(null)}>
-              关闭
-            </button>
+        <section className="modal-backdrop" onClick={() => setOpenedPile(null)}>
+          <div className="pile-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="pile-preview-header">
+              <h3>{PILE_LABEL[openedPile]}内容</h3>
+              <button className="secondary" onClick={() => setOpenedPile(null)}>
+                关闭
+              </button>
+            </div>
+            {pileCards.length > 0 ? (
+              <ul>
+                {pileCards.map((cardId, index) => (
+                  <li key={`${cardId}-${index}`}>
+                    {index + 1}. {CARDS[cardId].name}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>当前为空。</p>
+            )}
           </div>
-          {pileCards.length > 0 ? (
-            <ul>
-              {pileCards.map((cardId, index) => (
-                <li key={`${cardId}-${index}`}>
-                  {index + 1}. {CARDS[cardId].name}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>当前为空。</p>
-          )}
         </section>
       )}
 
