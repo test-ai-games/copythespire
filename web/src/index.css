@@ -1,0 +1,163 @@
+:root {
+  font-family: 'Trebuchet MS', 'Noto Sans SC', 'PingFang SC', sans-serif;
+  line-height: 1.4;
+  color: #f6efe1;
+  background: radial-gradient(circle at top, #30404b, #171d23 60%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+}
+
+.battle-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  letter-spacing: 0.02em;
+}
+
+.status {
+  font-weight: 700;
+  color: #ffd48a;
+}
+
+.arena {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.panel {
+  background: linear-gradient(160deg, #22313b, #1a232b);
+  border: 1px solid #5b6b78;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 30%);
+}
+
+.panel h2 {
+  margin: 0 0 8px;
+}
+
+.panel p {
+  margin: 4px 0;
+}
+
+.intent {
+  margin-top: 8px;
+  color: #ffaf76;
+  font-weight: 600;
+}
+
+.hand-area {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.card {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  border: 1px solid #8a6e4f;
+  background: linear-gradient(180deg, #3e2f24, #241b15);
+  color: #f9e8d5;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.primary,
+.secondary {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.primary {
+  background: linear-gradient(180deg, #d44f38, #8c2f20);
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondary {
+  background: linear-gradient(180deg, #5a6975, #354049);
+}
+
+.log {
+  background: rgb(12 16 20 / 60%);
+  border: 1px solid #41505b;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.log h3 {
+  margin: 0 0 8px;
+}
+
+.log ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.log li {
+  margin: 4px 0;
+}
+
+@media (max-width: 700px) {
+  .topbar {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .arena {
+    grid-template-columns: 1fr;
+  }
+}
