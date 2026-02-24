@@ -45,6 +45,8 @@ type CardDef = {
   description: string
 }
 
+type PileType = 'draw' | 'discard' | 'exhaust'
+
 const STARTING_DECK: CardId[] = [
   'strike',
   'strike',
@@ -69,6 +71,12 @@ const INTENT_ROTATION: EnemyIntent[] = [
   { id: 'ritual_attack', label: '祭祀斩击 (6)', attack: 6 },
   { id: 'ritual_attack', label: '祭祀斩击 (6)', attack: 6 },
 ]
+
+const PILE_LABEL: Record<PileType, string> = {
+  draw: '抽牌堆',
+  discard: '弃牌堆',
+  exhaust: '消耗牌堆',
+}
 
 function shuffle<T>(input: T[]): T[] {
   const arr = [...input]
@@ -226,6 +234,7 @@ function FighterCultist() {
 
 function App() {
   const [state, setState] = useState<BattleState>(() => createInitialState())
+  const [openedPile, setOpenedPile] = useState<PileType | null>(null)
 
   const statusText = useMemo(() => {
     if (state.phase === 'won') {
@@ -370,6 +379,19 @@ function App() {
     })
   }
 
+  const pileCards = useMemo(() => {
+    if (!openedPile) {
+      return []
+    }
+    if (openedPile === 'draw') {
+      return [...state.player.drawPile].reverse()
+    }
+    if (openedPile === 'discard') {
+      return [...state.player.discardPile].reverse()
+    }
+    return [...state.player.exhaustPile].reverse()
+  }, [openedPile, state.player.discardPile, state.player.drawPile, state.player.exhaustPile])
+
   return (
     <main className="battle-page">
       <header className="topbar">
@@ -378,7 +400,13 @@ function App() {
         </div>
         <div className="top-right">
           <div className="status">{statusText}</div>
-          <button className="secondary" onClick={() => setState(createInitialState())}>
+          <button
+            className="secondary"
+            onClick={() => {
+              setState(createInitialState())
+              setOpenedPile(null)
+            }}
+          >
             重新开始
           </button>
         </div>
@@ -401,10 +429,19 @@ function App() {
       </section>
 
       <section className="hud-row">
-        <aside className="pile left-pile">
-          <h3>资源</h3>
-          <p>抽牌堆: {state.player.drawPile.length}</p>
-          <p>费用: {state.player.energy}</p>
+        <aside className="side-modules">
+          <button
+            className="module module-button"
+            disabled={state.player.drawPile.length === 0}
+            onClick={() => setOpenedPile('draw')}
+          >
+            <h3>抽牌堆</h3>
+            <p>{state.player.drawPile.length}</p>
+          </button>
+          <div className="module">
+            <h3>费用</h3>
+            <p>{state.player.energy}</p>
+          </div>
         </aside>
 
         <section className="center-play">
@@ -433,12 +470,47 @@ function App() {
           </div>
         </section>
 
-        <aside className="pile right-pile">
-          <h3>牌堆</h3>
-          <p>弃牌堆: {state.player.discardPile.length}</p>
-          <p>消耗牌堆: {state.player.exhaustPile.length}</p>
+        <aside className="side-modules">
+          <button
+            className="module module-button"
+            disabled={state.player.discardPile.length === 0}
+            onClick={() => setOpenedPile('discard')}
+          >
+            <h3>弃牌堆</h3>
+            <p>{state.player.discardPile.length}</p>
+          </button>
+          <button
+            className="module module-button"
+            disabled={state.player.exhaustPile.length === 0}
+            onClick={() => setOpenedPile('exhaust')}
+          >
+            <h3>消耗牌堆</h3>
+            <p>{state.player.exhaustPile.length}</p>
+          </button>
         </aside>
       </section>
+
+      {openedPile && (
+        <section className="pile-preview">
+          <div className="pile-preview-header">
+            <h3>{PILE_LABEL[openedPile]}内容</h3>
+            <button className="secondary" onClick={() => setOpenedPile(null)}>
+              关闭
+            </button>
+          </div>
+          {pileCards.length > 0 ? (
+            <ul>
+              {pileCards.map((cardId, index) => (
+                <li key={`${cardId}-${index}`}>
+                  {index + 1}. {CARDS[cardId].name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>当前为空。</p>
+          )}
+        </section>
+      )}
 
       <section className="log">
         <h3>战斗日志</h3>

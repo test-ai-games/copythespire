@@ -147,21 +147,39 @@ button {
   align-items: start;
 }
 
-.pile {
+.side-modules {
+  display: grid;
+  gap: 10px;
+}
+
+.module {
   border: 1px solid #617588;
   border-radius: 12px;
   background: rgb(15 20 28 / 72%);
   padding: 10px;
+  color: inherit;
 }
 
-.pile h3 {
+.module-button {
+  cursor: pointer;
+  text-align: left;
+}
+
+.module-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.module h3 {
   margin: 0 0 6px;
   color: #ffe1a8;
   font-size: 1rem;
 }
 
-.pile p {
+.module p {
   margin: 4px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
 .center-play {
@@ -226,6 +244,29 @@ button {
   padding: 12px;
 }
 
+.pile-preview {
+  background: rgb(10 14 20 / 78%);
+  border: 1px solid #54687a;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.pile-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.pile-preview h3 {
+  margin: 0;
+}
+
+.pile-preview ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
 .log h3 {
   margin: 0 0 8px;
 }
@@ -244,14 +285,13 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .pile {
-    display: grid;
+  .side-modules {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px 12px;
   }
 
-  .pile h3 {
-    grid-column: 1 / -1;
+  .module {
+    display: grid;
+    align-items: center;
   }
 }
 
