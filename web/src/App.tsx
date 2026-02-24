@@ -14,12 +14,12 @@ type Player = Actor & {
   drawPile: CardId[]
   hand: CardId[]
   discardPile: CardId[]
+  exhaustPile: CardId[]
 }
 
 type EnemyIntent =
-  | { id: 'chomp'; label: string; attack: number }
-  | { id: 'bellow'; label: string; block: number; strength: number }
-  | { id: 'thrash'; label: string; attack: number; block: number }
+  | { id: 'chant'; label: string; strength: number }
+  | { id: 'ritual_attack'; label: string; attack: number }
 
 type Enemy = Actor & {
   name: string
@@ -60,14 +60,14 @@ const STARTING_DECK: CardId[] = [
 
 const CARDS: Record<CardId, CardDef> = {
   strike: { id: 'strike', name: '打击', cost: 1, description: '造成 6 点伤害。' },
-  defend: { id: 'defend', name: '防御', cost: 1, description: '获得 5 点格挡。' },
+  defend: { id: 'defend', name: '防御', cost: 1, description: '获得 5 点护甲。' },
   bash: { id: 'bash', name: '重击', cost: 2, description: '造成 8 点伤害，施加 2 层易伤。' },
 }
 
 const INTENT_ROTATION: EnemyIntent[] = [
-  { id: 'chomp', label: '啃咬', attack: 11 },
-  { id: 'bellow', label: '怒吼', block: 6, strength: 2 },
-  { id: 'thrash', label: '拍击', attack: 7, block: 5 },
+  { id: 'chant', label: '吟唱 (+3 力量)', strength: 3 },
+  { id: 'ritual_attack', label: '祭祀斩击 (6)', attack: 6 },
+  { id: 'ritual_attack', label: '祭祀斩击 (6)', attack: 6 },
 ]
 
 function shuffle<T>(input: T[]): T[] {
@@ -92,6 +92,7 @@ function drawCards(player: Player, amount: number): Player {
       drawPile = shuffle(discardPile)
       discardPile = []
     }
+
     const next = drawPile.pop()
     if (next) {
       hand.push(next)
@@ -116,6 +117,7 @@ function applyVulnerable(damage: number, target: Actor): number {
 function dealDamage(target: Actor, rawDamage: number): { target: Actor; hpLoss: number } {
   const blocked = Math.min(target.block, rawDamage)
   const hpLoss = Math.max(rawDamage - blocked, 0)
+
   return {
     target: {
       ...target,
@@ -136,6 +138,7 @@ function createInitialState(): BattleState {
     drawPile: shuffle(STARTING_DECK),
     hand: [],
     discardPile: [],
+    exhaustPile: [],
   }
 
   return {
@@ -143,17 +146,82 @@ function createInitialState(): BattleState {
     phase: 'player',
     player: drawCards(playerBase, 5),
     enemy: {
-      name: '咔咔',
-      hp: 42,
-      maxHp: 42,
+      name: '邪教徒',
+      hp: 50,
+      maxHp: 50,
       block: 0,
       vulnerable: 0,
       strength: 0,
       intentIndex: 0,
       intent: INTENT_ROTATION[0],
     },
-    log: ['战斗开始：红裤衩 vs 咔咔'],
+    log: ['战斗开始：红裤衩 vs 邪教徒'],
   }
+}
+
+function HpBlockBar({ hp, maxHp, block }: { hp: number; maxHp: number; block: number }) {
+  const hpPercent = Math.max((hp / maxHp) * 100, 0)
+  return (
+    <div className="bars">
+      <div className="bar hp-bar">
+        <div className="fill" style={{ width: `${hpPercent}%` }} />
+        <span>{hp}/{maxHp} HP</span>
+      </div>
+      <div className="bar block-bar">
+        <div className="fill" style={{ width: `${Math.min((block / 30) * 100, 100)}%` }} />
+        <span>{block} 护甲</span>
+      </div>
+    </div>
+  )
+}
+
+function RelicBurningBlood() {
+  return (
+    <div className="relic" title="燃烧之血">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="fire" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffe07a" />
+            <stop offset="55%" stopColor="#ff7a30" />
+            <stop offset="100%" stopColor="#b32514" />
+          </linearGradient>
+        </defs>
+        <circle cx="32" cy="32" r="28" fill="#3a1d12" stroke="#f4b56f" strokeWidth="3" />
+        <path d="M34 13c3 9-4 12-4 18 0 4 3 7 7 7 5 0 9-4 9-10 0-8-5-12-12-15z" fill="url(#fire)" />
+        <path d="M24 26c0 0-8 5-8 14 0 7 6 12 14 12s14-5 14-12c0-6-4-11-9-13 1 7-2 11-7 11-4 0-7-3-7-7 0-2 1-4 3-5z" fill="url(#fire)" />
+      </svg>
+      <span>燃烧之血</span>
+    </div>
+  )
+}
+
+function FighterIronclad() {
+  return (
+    <svg className="fighter-svg" viewBox="0 0 180 180" aria-label="红裤衩">
+      <circle cx="90" cy="30" r="18" fill="#f2b48a" />
+      <rect x="58" y="50" width="64" height="58" rx="10" fill="#cb2f2f" />
+      <rect x="62" y="104" width="56" height="24" rx="6" fill="#8d1c1f" />
+      <rect x="48" y="58" width="10" height="44" rx="4" fill="#f2b48a" />
+      <rect x="122" y="58" width="10" height="44" rx="4" fill="#f2b48a" />
+      <rect x="66" y="128" width="18" height="38" rx="6" fill="#f2b48a" />
+      <rect x="96" y="128" width="18" height="38" rx="6" fill="#f2b48a" />
+    </svg>
+  )
+}
+
+function FighterCultist() {
+  return (
+    <svg className="fighter-svg" viewBox="0 0 180 180" aria-label="蓝色邪教徒">
+      <circle cx="90" cy="34" r="14" fill="#f0d9b5" />
+      <path d="M52 58c6-16 18-24 38-24s32 8 38 24v78H52z" fill="#265ea8" />
+      <path d="M70 82h40v54H70z" fill="#1d3f75" />
+      <circle cx="84" cy="32" r="3" fill="#111" />
+      <circle cx="96" cy="32" r="3" fill="#111" />
+      <path d="M83 42h14" stroke="#111" strokeWidth="2" />
+      <rect x="40" y="70" width="12" height="46" rx="5" fill="#f0d9b5" />
+      <rect x="128" y="70" width="12" height="46" rx="5" fill="#f0d9b5" />
+    </svg>
+  )
 }
 
 function App() {
@@ -206,7 +274,7 @@ function App() {
 
       if (card.id === 'defend') {
         player = { ...player, block: player.block + 5 }
-        log.push('红裤衩使用防御，获得 5 点格挡。')
+        log.push('红裤衩使用防御，获得 5 点护甲。')
       }
 
       if (card.id === 'bash') {
@@ -221,7 +289,7 @@ function App() {
       }
 
       if (enemy.hp <= 0) {
-        log.push('咔咔被击败。')
+        log.push('邪教徒被击败。')
         return { ...prev, player, enemy, log, phase: 'won' }
       }
 
@@ -250,30 +318,21 @@ function App() {
       }
 
       const intent = enemy.intent
-      log.push(`咔咔意图：${intent.label}`)
+      log.push(`邪教徒意图：${intent.label}`)
 
-      if (intent.id === 'chomp') {
-        const damage = applyVulnerable(intent.attack + enemy.strength, player)
-        const result = dealDamage(player, damage)
-        player = { ...player, ...result.target }
-        log.push(`咔咔啃咬，造成 ${result.hpLoss} 点伤害。`)
-      }
-
-      if (intent.id === 'bellow') {
+      if (intent.id === 'chant') {
         enemy = {
           ...enemy,
-          block: enemy.block + intent.block,
           strength: enemy.strength + intent.strength,
         }
-        log.push(`咔咔怒吼，获得 ${intent.block} 格挡和 ${intent.strength} 力量。`)
+        log.push(`邪教徒吟唱，获得 ${intent.strength} 点力量。`)
       }
 
-      if (intent.id === 'thrash') {
+      if (intent.id === 'ritual_attack') {
         const damage = applyVulnerable(intent.attack + enemy.strength, player)
         const result = dealDamage(player, damage)
         player = { ...player, ...result.target }
-        enemy = { ...enemy, block: enemy.block + intent.block }
-        log.push(`咔咔拍击，造成 ${result.hpLoss} 点伤害并获得 ${intent.block} 格挡。`)
+        log.push(`邪教徒斩击，造成 ${result.hpLoss} 点伤害。`)
       }
 
       enemy = { ...enemy, vulnerable: Math.max(enemy.vulnerable - 1, 0) }
@@ -314,53 +373,71 @@ function App() {
   return (
     <main className="battle-page">
       <header className="topbar">
-        <h1>CopyTheSpire - 战斗原型</h1>
-        <div className="status">{statusText}</div>
-        <button className="secondary" onClick={() => setState(createInitialState())}>
-          重新开始
-        </button>
+        <div className="top-left">
+          <RelicBurningBlood />
+        </div>
+        <div className="top-right">
+          <div className="status">{statusText}</div>
+          <button className="secondary" onClick={() => setState(createInitialState())}>
+            重新开始
+          </button>
+        </div>
       </header>
 
       <section className="arena">
-        <article className="panel enemy">
-          <h2>{state.enemy.name}</h2>
-          <p>HP: {state.enemy.hp}/{state.enemy.maxHp}</p>
-          <p>格挡: {state.enemy.block}</p>
-          <p>力量: {state.enemy.strength}</p>
-          <p>易伤: {state.enemy.vulnerable}</p>
-          <p className="intent">意图: {state.enemy.intent.label}</p>
-        </article>
-
-        <article className="panel player">
+        <article className="fighter-card left">
+          <FighterIronclad />
           <h2>红裤衩</h2>
-          <p>HP: {state.player.hp}/{state.player.maxHp}</p>
-          <p>格挡: {state.player.block}</p>
-          <p>能量: {state.player.energy}</p>
-          <p>易伤: {state.player.vulnerable}</p>
-          <p>
-            牌堆: 抽牌堆 {state.player.drawPile.length} / 弃牌堆 {state.player.discardPile.length}
-          </p>
+          <HpBlockBar hp={state.player.hp} maxHp={state.player.maxHp} block={state.player.block} />
+        </article>
+
+        <article className="fighter-card right">
+          <FighterCultist />
+          <h2>{state.enemy.name}</h2>
+          <p className="intent">意图: {state.enemy.intent.label}</p>
+          <p className="small">力量 {state.enemy.strength} / 易伤 {state.enemy.vulnerable}</p>
+          <HpBlockBar hp={state.enemy.hp} maxHp={state.enemy.maxHp} block={state.enemy.block} />
         </article>
       </section>
 
-      <section className="hand-area">
-        {state.player.hand.map((cardId, index) => {
-          const card = CARDS[cardId]
-          const disabled = state.phase !== 'player' || state.player.energy < card.cost
-          return (
-            <button key={`${card.id}-${index}`} className="card" disabled={disabled} onClick={() => playCard(index)}>
-              <strong>{card.name}</strong>
-              <span>费用: {card.cost}</span>
-              <small>{card.description}</small>
-            </button>
-          )
-        })}
-      </section>
+      <section className="hud-row">
+        <aside className="pile left-pile">
+          <h3>资源</h3>
+          <p>抽牌堆: {state.player.drawPile.length}</p>
+          <p>费用: {state.player.energy}</p>
+        </aside>
 
-      <section className="actions">
-        <button className="primary" onClick={endTurn} disabled={state.phase !== 'player'}>
-          结束回合
-        </button>
+        <section className="center-play">
+          <div className="hand-area">
+            {state.player.hand.map((cardId, index) => {
+              const card = CARDS[cardId]
+              const disabled = state.phase !== 'player' || state.player.energy < card.cost
+              return (
+                <button
+                  key={`${card.id}-${index}`}
+                  className="card"
+                  disabled={disabled}
+                  onClick={() => playCard(index)}
+                >
+                  <strong>{card.name}</strong>
+                  <span>费用: {card.cost}</span>
+                  <small>{card.description}</small>
+                </button>
+              )
+            })}
+          </div>
+          <div className="actions">
+            <button className="primary" onClick={endTurn} disabled={state.phase !== 'player'}>
+              结束回合
+            </button>
+          </div>
+        </section>
+
+        <aside className="pile right-pile">
+          <h3>牌堆</h3>
+          <p>弃牌堆: {state.player.discardPile.length}</p>
+          <p>消耗牌堆: {state.player.exhaustPile.length}</p>
+        </aside>
       </section>
 
       <section className="log">
