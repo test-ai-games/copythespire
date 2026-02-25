@@ -170,7 +170,7 @@ function createBattleState(playerHp = 80, maxHp = 80, encounter = 1): BattleStat
       intentIndex: 0,
       intent: INTENT_ROTATION[0],
     },
-    log: [`第 ${encounter} 场战斗开始：红裤衩 vs 邪教徒`],
+    log: [`第 ${encounter} 场战斗开始：铁血战士 vs 邪教徒`],
   }
 }
 
@@ -251,7 +251,7 @@ function RelicBurningBlood() {
 
 function FighterIronclad() {
   return (
-    <svg className="fighter-svg" viewBox="0 0 180 180" aria-label="红裤衩">
+    <svg className="fighter-svg" viewBox="0 0 180 180" aria-label="铁血战士">
       <circle cx="90" cy="30" r="18" fill="#f2b48a" />
       <rect x="58" y="50" width="64" height="58" rx="10" fill="#cb2f2f" />
       <rect x="62" y="104" width="56" height="24" rx="6" fill="#8d1c1f" />
@@ -324,12 +324,12 @@ function App() {
         const damage = applyVulnerable(6, enemy)
         const result = dealDamage(enemy, damage)
         enemy = { ...enemy, ...result.target }
-        log.push(`红裤衩使用打击，造成 ${result.hpLoss} 点伤害。`)
+        log.push(`铁血战士使用打击，造成 ${result.hpLoss} 点伤害。`)
       }
 
       if (card.id === 'defend') {
         player = { ...player, block: player.block + 5 }
-        log.push('红裤衩使用防御，获得 5 点护甲。')
+        log.push('铁血战士使用防御，获得 5 点护甲。')
       }
 
       if (card.id === 'bash') {
@@ -340,7 +340,7 @@ function App() {
           ...result.target,
           vulnerable: result.target.vulnerable + 2,
         }
-        log.push(`红裤衩使用重击，造成 ${result.hpLoss} 点伤害并施加 2 层易伤。`)
+        log.push(`铁血战士使用重击，造成 ${result.hpLoss} 点伤害并施加 2 层易伤。`)
       }
 
       if (enemy.hp <= 0) {
@@ -405,7 +405,7 @@ function App() {
       enemy = { ...enemy, vulnerable: Math.max(enemy.vulnerable - 1, 0) }
 
       if (player.hp <= 0) {
-        log.push('红裤衩倒下了。')
+        log.push('铁血战士倒下了。')
         return { ...prev, player, enemy, log, phase: 'lost' }
       }
 
@@ -480,7 +480,7 @@ function App() {
       <section className="arena">
         <article className="fighter-card left">
           <FighterIronclad />
-          <h2>红裤衩</h2>
+          <h2>铁血战士</h2>
           <BuffSlots
             title="Buff 槽"
             buffs={[
